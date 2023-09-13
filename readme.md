@@ -1,5 +1,5 @@
 # Python Ray Tracing
-
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) <br/>
 It's a simple ray tracing engine on python designed for rendering scenes. The code is written keeping as much readability as possible.
 
 ## Render example
