@@ -3,7 +3,8 @@
 It's a simple ray tracing engine on python designed for rendering scenes. The code is written keeping as much readability as possible.
 
 ## Render example
-![render example](assets/ray_tracing_example.png)
+![render example](assets/ray_tracing_example_1.png)
+![render example](assets/ray_tracing_example_2.png)
 
 ## Installation and Launch
 The project supports python 3.10.0 and higher. <br/>
