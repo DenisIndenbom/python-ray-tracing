@@ -3,12 +3,18 @@ from abc import ABC, abstractmethod
 
 from .material import Material
 
+from .vector_methods import *
+
 __all__ = ['Object', 'Sphere']
 
 
 class Object(ABC):
     @abstractmethod
     def intersect(self, ray_origin: np.ndarray, ray_direction: np.ndarray):
+        pass
+
+    @abstractmethod
+    def get_normal(self, intersection):
         pass
 
     @abstractmethod
@@ -40,6 +46,9 @@ class Sphere(Object):
                 return min(t1, t2)
 
         return None
+
+    def get_normal(self, intersection: np.ndarray):
+        return normalize(intersection - self.center)
 
     def get_pos(self):
         return self.center

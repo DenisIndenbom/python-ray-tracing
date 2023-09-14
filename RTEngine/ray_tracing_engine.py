@@ -69,13 +69,13 @@ class RayTracingEngine:
             return color * self.get_sky(ray_direction)
 
         intersection = ray_origin + min_distance * ray_direction
-        normal_to_surface = normalize(intersection - nearest_object.get_pos())
+        normal = nearest_object.get_normal(intersection)
 
         rand = np.random.rand(3)
 
-        origin = intersection + 1e-5 * normal_to_surface
-        direction = reflected(ray_direction, normal_to_surface) + normalize(
-            rand * np.dot(rand, normal_to_surface)) * nearest_object.get_material().matt
+        origin = intersection + 1e-5 * normal
+        direction = reflected(ray_direction, normal) + \
+                    normalize(rand * np.dot(rand, normal)) * nearest_object.get_material().matt
 
         color *= nearest_object.get_material().color
 
