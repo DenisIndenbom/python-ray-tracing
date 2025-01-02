@@ -3,8 +3,9 @@ import numpy as np
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 
-from .objects import *
-from .vector_methods import *
+from .objects import Object
+from .lights import Light
+from .vector_methods import normalize, reflected
 
 __all__ = ['RayTracingEngine']
 
@@ -14,9 +15,10 @@ class RayTracingEngine:
                  width: int,
                  height: int,
                  max_depth: int,
-                 camera: np.ndarray,
+                 camera: np.ndarray[float],
                  objects: list[Object],
-                 lights: list[np.ndarray]):
+                 lights: list[Light],
+                 sky_color: np.ndarray[float] = np.array([0.3, 0.6, 1.0])):
         self.width = width
         self.height = height
         self.max_depth = max_depth
@@ -28,6 +30,8 @@ class RayTracingEngine:
 
         self.objects = objects
         self.lights = lights
+
+        self.sky_color = sky_color
 
     def nearest_intersected_object(self, ray_origin: np.ndarray, ray_direction: np.ndarray):
         distances = [obj.intersect(ray_origin, ray_direction) for obj in self.objects]
@@ -45,45 +49,43 @@ class RayTracingEngine:
     def get_sky(self, rd: np.ndarray):
         result = np.zeros(3)
 
-        for light in self.lights:
-            light = normalize(light)
+        for light_obj in self.lights:
+            light = normalize(light_obj.position)
 
-            col = np.array([0.3, 0.6, 1.0])
-            sun = np.array([0.95, 0.9, 1.0])
+            brightness = max(0.0, np.dot(rd, light))
 
-            sun *= max(0.0, np.dot(rd, light)**256.0)
-            col *= max(0.0, np.dot(light, np.array([0.0, 0.0, -1.0])))
+            result += light_obj.color * brightness + self.sky_color * (1 - brightness)
 
-            result += sun + col * 0.8
+        result /= len(self.lights)
 
         return result / result.max() if result.max() > 1 else result
 
     def cast_ray(self, ray_origin: np.ndarray, ray_direction: np.ndarray, color: np.ndarray, death: int):
-        if death <= 0 or sum(color) < 0.01:
-            return color
+        while death > 0 and sum(color) >= 0.01:
+            nearest_object, min_distance = self.nearest_intersected_object(ray_origin, ray_direction)
 
-        nearest_object, min_distance = self.nearest_intersected_object(ray_origin, ray_direction)
+            if nearest_object is None:
+                return color * self.get_sky(ray_direction)
 
-        if nearest_object is None:
-            return color * self.get_sky(ray_direction)
+            if nearest_object.get_material().bloom:
+                return color * nearest_object.get_material().color
 
-        if nearest_object.get_material().bloom:
-            return color * nearest_object.get_material().color
+            intersection = ray_origin + min_distance * ray_direction
+            normal = nearest_object.get_normal(intersection)
 
-        intersection = ray_origin + min_distance * ray_direction
-        normal = nearest_object.get_normal(intersection)
+            reflection = normalize(reflected(ray_direction, normal)) * nearest_object.get_material().refl
 
-        reflection = normalize(reflected(ray_direction, normal))
+            rand = np.random.rand(3)
+            diff = normalize(rand * np.dot(rand, normal)) * nearest_object.get_material().matt
 
-        rand = np.random.rand(3)
-        matt = normalize(rand * np.dot(rand, normal)) * nearest_object.get_material().matt
+            ray_origin = intersection + 1e-5 * normal
+            ray_direction = normalize(reflection + diff)
 
-        origin = intersection + 1e-5 * normal
-        direction = normalize(reflection + matt)
+            color *= nearest_object.get_material().color
 
-        color *= nearest_object.get_material().color * nearest_object.get_material().refl
+            death -= 1
 
-        return self.cast_ray(origin, direction, color, death - 1)
+        return np.zeros(3)
 
     def trace_ray(self, pos: tuple):
         i, j, x, y = pos
@@ -96,7 +98,7 @@ class RayTracingEngine:
 
         return i, j, np.clip(color, 0, 1)
 
-    def render(self, sampling=8, processes=None):
+    def render(self, sampling: int = 8, processes: bool = None, gamma: int = 0.7):
         processes = cpu_count() if processes is None else processes
 
         image = np.zeros((self.height, self.width, 3))
@@ -113,6 +115,6 @@ class RayTracingEngine:
 
         image /= sampling
 
-        image **= 0.7
+        image **= gamma
 
         return image
