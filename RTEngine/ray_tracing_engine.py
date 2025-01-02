@@ -46,26 +46,26 @@ class RayTracingEngine:
 
         return nearest_object, min_distance
 
-    def get_sky(self, rd: np.ndarray):
+    def get_sky(self, normal: np.ndarray, ray_origin: np.array, ray_direction: np.ndarray):
         result = np.zeros(3)
 
         for light_obj in self.lights:
-            light = normalize(light_obj.position)
+            distance = np.linalg.norm(light_obj.position - ray_origin)
 
-            brightness = max(0.0, np.dot(rd, light))
+            brightness = np.dot(ray_direction, normal) / distance ** 2
 
-            result += light_obj.color * brightness + self.sky_color * (1 - brightness)
-
-        result /= len(self.lights)
+            result += light_obj.color * brightness + self.sky_color
 
         return result / result.max() if result.max() > 1 else result
 
     def cast_ray(self, ray_origin: np.ndarray, ray_direction: np.ndarray, color: np.ndarray, death: int):
+        normal = np.zeros(3)
+
         while death > 0 and sum(color) >= 0.01:
             nearest_object, min_distance = self.nearest_intersected_object(ray_origin, ray_direction)
 
             if nearest_object is None:
-                return color * self.get_sky(ray_direction)
+                return color * self.get_sky(normal, ray_origin, ray_direction)
 
             if nearest_object.get_material().bloom:
                 return color * nearest_object.get_material().color
