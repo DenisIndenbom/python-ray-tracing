@@ -14,15 +14,15 @@ class Object(ABC):
         pass
 
     @abstractmethod
-    def get_normal(self, intersection):
+    def get_normal(self, intersection) -> np.ndarray:
         pass
 
     @abstractmethod
-    def get_pos(self):
+    def get_pos(self) -> tuple:
         pass
 
     @abstractmethod
-    def get_material(self):
+    def get_material(self) -> Material:
         pass
 
 

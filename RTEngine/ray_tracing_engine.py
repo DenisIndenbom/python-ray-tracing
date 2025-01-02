@@ -67,6 +67,9 @@ class RayTracingEngine:
         if nearest_object is None:
             return color * self.get_sky(ray_direction)
 
+        if nearest_object.get_material().bloom:
+            return color * nearest_object.get_material().color
+
         intersection = ray_origin + min_distance * ray_direction
         normal = nearest_object.get_normal(intersection)
 
