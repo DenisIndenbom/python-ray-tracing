@@ -81,18 +81,14 @@ class Cube(Object):
         return min(tN, tF)
 
     def get_normal(self, intersection: np.ndarray):
-        # return normalize(intersection - self.center) # normalize(-np.sign(intersection))
-        local_cords = (intersection - self.center) / self.size
+        local_coords = (intersection - self.center) / self.size
 
-        x, y, z = np.sign(local_cords)
-        axis = local_cords.argmax()
+        axis = np.argmax(np.abs(local_coords))
 
-        if axis == 0:
-            return np.array([x, 0, 0])
-        elif axis == 1:
-            return np.array([0, y, 0])
-        elif axis == 2:
-            return np.array([0, 0, z])
+        normal = np.zeros(3)
+        normal[axis] = np.sign(local_coords[axis])
+
+        return normal
 
     def get_pos(self):
         return self.center

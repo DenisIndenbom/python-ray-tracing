@@ -43,7 +43,6 @@ class RayTracingEngine:
         return nearest_object, min_distance
 
     def get_sky(self, rd: np.ndarray):
-
         result = np.zeros(3)
 
         for light in self.lights:
@@ -60,7 +59,7 @@ class RayTracingEngine:
         return result / result.max() if result.max() > 1 else result
 
     def cast_ray(self, ray_origin: np.ndarray, ray_direction: np.ndarray, color: np.ndarray, death: int):
-        if death <= 0:
+        if death <= 0 or sum(color) < 0.01:
             return color
 
         nearest_object, min_distance = self.nearest_intersected_object(ray_origin, ray_direction)
@@ -71,13 +70,15 @@ class RayTracingEngine:
         intersection = ray_origin + min_distance * ray_direction
         normal = nearest_object.get_normal(intersection)
 
+        reflection = normalize(reflected(ray_direction, normal))
+
         rand = np.random.rand(3)
+        matt = normalize(rand * np.dot(rand, normal)) * nearest_object.get_material().matt
 
         origin = intersection + 1e-5 * normal
-        direction = reflected(ray_direction, normal) + \
-                    normalize(rand * np.dot(rand, normal)) * nearest_object.get_material().matt
+        direction = normalize(reflection + matt)
 
-        color *= nearest_object.get_material().color
+        color *= nearest_object.get_material().color * nearest_object.get_material().refl
 
         return self.cast_ray(origin, direction, color, death - 1)
 
@@ -104,9 +105,7 @@ class RayTracingEngine:
         for _ in tqdm(range(sampling)):
             with Pool(processes=processes) as pool:
                 result = pool.map(self.trace_ray, cords)
-                for row in result:
-                    i, j, color = row
-
+                for i, j, color in result:
                     image[i, j] += color
 
         image /= sampling
