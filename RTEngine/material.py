@@ -10,8 +10,11 @@ class Material:
         assert isinstance(refl, int | float)
         assert isinstance(bloom, bool)
 
+        assert 0 <= matt <= 1
+        assert 0 <= refl <= 1
+
         self.color = array(color) if isinstance(color, list) else color
-        self.matt = matt + 1e-3
-        self.refl = refl + 1e-3
+        self.matt = matt
+        self.refl = refl
 
         self.bloom = bloom

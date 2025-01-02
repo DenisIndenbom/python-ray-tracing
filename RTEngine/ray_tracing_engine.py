@@ -98,7 +98,7 @@ class RayTracingEngine:
 
         return i, j, np.clip(color, 0, 1)
 
-    def render(self, sampling: int = 8, processes: bool = None, gamma: int = 0.7):
+    def render(self, sampling: int = 8, processes: int = None, gamma: int = 0.7):
         processes = cpu_count() if processes is None else processes
 
         image = np.zeros((self.height, self.width, 3))
